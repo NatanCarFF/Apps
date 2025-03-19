@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Edição</title>
+    <style>
+        /* Estilos gerais */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(145deg, #2c3e50, #4b6cb7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: #1f2a3d;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            text-align: center;
+            backdrop-filter: blur(10px); /* Fundo desfocado */
+        }
+
+        textarea {
+            width: 100%;
+            height: 250px;
+            padding: 15px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: none;
+            background-color: #283042;
+            color: #fff;
+            resize: vertical;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border: 2px solid #4b6cb7;
+            box-shadow: 0 0 10px rgba(75, 108, 183, 0.6);
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background-color: #4b6cb7;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        button:hover {
+            background-color: #3e5592;
+            transform: translateY(-2px);
+        }
+
+        .emoji {
+            font-size: 28px;
+        }
+
+        .emoji-picker {
+            display: none;
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #2c3e50;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            z-index: 999;
+            text-align: center;
+            max-height: 400px;
+            overflow-y: auto;
+            width: 90%;
+        }
+
+        .emoji-picker button {
+            font-size: 26px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #1f2a3d;
+            border: none;
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        .emoji-picker button:hover {
+            background-color: #4b6cb7;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Estilo para navegação de categorias */
+        .emoji-category-container {
+            margin-bottom: 15px;
+        }
+
+        .emoji-category {
+            padding: 8px 15px;
+            background-color: #4b6cb7;
+            border-radius: 20px;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 16px;
+        }
+
+        .emoji-category:hover {
+            background-color: #3e5592;
+        }
+
+        /* Responsividade */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                max-width: 100%;
+            }
+            button {
+                font-size: 18px;
+                padding: 10px 20px;
+            }
+            textarea {
+                font-size: 14px;
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <textarea id="inputText" placeholder="Digite suas informações aqui..."></textarea>
+
+        <div class="button-container">
+            <button class="emoji" onclick="exportarTexto()">📤</button> <!-- Botão de exportar -->
+            <button class="emoji" onclick="mostrarInputArquivo()">📥</button> <!-- Botão de importar -->
+            <button class="emoji" onclick="toggleEmojiPicker()">😊</button> <!-- Botão para escolher emoji -->
+        </div>
+
+        <!-- Navegação de Categorias -->
+        <div class="emoji-category-container">
+            <button class="emoji-category" onclick="filtrarEmojis('expressao')">Expressões</button>
+            <button class="emoji-category" onclick="filtrarEmojis('animais')">Animais</button>
+            <button class="emoji-category" onclick="filtrarEmojis('objetos')">Objetos</button>
+            <button class="emoji-category" onclick="filtrarEmojis('comida')">Comida</button>
+            <button class="emoji-category" onclick="filtrarEmojis('atividade')">Atividades</button>
+            <button class="emoji-category" onclick="filtrarEmojis('simbolos')">Símbolos</button>
+        </div>
+
+        <!-- Seletor de emojis -->
+        <div class="emoji-picker" id="emojiPicker">
+            <!-- Emojis dinâmicos que mudam conforme a categoria selecionada -->
+            <div id="emojiList"></div>
+        </div>
+
+        <input type="file" class="file-input" id="fileInput" accept=".txt" onchange="lerArquivo(event)" />
+    </div>
+
+    <script>
+        // Emojis organizados por categorias
+        const emojis = {
+            expressao: ['😊', '😂', '😍', '😎', '🥺', '😜', '😢', '🤔', '🤩', '😱', '😅', '😏', '🤗', '😇', '😜'],
+            animais: ['🐶', '🐱', '🦁', '🐯', '🐻', '🐨', '🐼', '🐸', '🐷', '🐮', '🐵', '🐒', '🦊', '🦄', '🦁'],
+            objetos: ['📱', '💻', '📷', '🎧', '🎮', '📚', '🎁', '📅', '📎', '📍', '🖊', '💡', '🖼', '🖥'],
+            comida: ['🍔', '🍕', '🍩', '🍪', '🥤', '🍉', '🍇', '🍗', '🍖', '🍣', '🍔', '🍟', '🍩', '🍭', '🥨'],
+            atividade: ['⚽', '🏀', '🎵', '🎤', '🎨', '🎬', '🏆', '🎮', '🎳', '⛷', '🏂', '🏋️', '🏃', '🚴'],
+            simbolos: ['❤', '⭐', '🔔', '🔑', '🔨', '🛠', '⚡', '🚨', '🎯', '⚠', '♻', '🔁', '⏳', '⚖', '💣'],
+        };
+
+        // Função para filtrar emojis por categoria
+        function filtrarEmojis(categoria) {
+            const emojiList = document.getElementById('emojiList');
+            emojiList.innerHTML = ''; // Limpar os emojis atuais
+
+            // Adicionar os emojis da categoria selecionada
+            emojis[categoria].forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.textContent = emoji;
+                btn.onclick = function() {
+                    adicionarEmoji(emoji);
+                };
+                emojiList.appendChild(btn);
+            });
+        }
+
+        // Inicializar com a categoria "Expressões"
+        filtrarEmojis('expressao');
+
+        // Função para criptografar (usar cifra de César)
+        function cifraCesar(texto, deslocamento) {
+            let resultado = '';
+            for (let i = 0; i < texto.length; i++) {
+                let char = texto.charCodeAt(i);
+                if (char >= 65 && char <= 90) {
+                    resultado += String.fromCharCode(((char - 65 + deslocamento) % 26) + 65); // Letras maiúsculas
+                } else if (char >= 97 && char <= 122) {
+                    resultado += String.fromCharCode(((char - 97 + deslocamento) % 26) + 97); // Letras minúsculas
+                } else {
+                    resultado += texto.charAt(i); // Outros caracteres (não criptografar)
+                }
+            }
+            return resultado;
+        }
+
+        // Função para descriptografar (reverter a cifra de César)
+        function decifraCesar(texto, deslocamento) {
+            return cifraCesar(texto, -deslocamento);
+        }
+
+        // Exportar: Criptografar o texto e gerar arquivo .txt com data e hora
+        function exportarTexto() {
+            const inputText = document.getElementById("inputText").value;
+            const textoCriptografado = cifraCesar(inputText, 3); // Deslocamento de 3 (exemplo)
+
+            // Gerar o nome do arquivo com data e hora
+            const data = new Date();
+            const ano = data.getFullYear();
+            const mes = (data.getMonth() + 1).toString().padStart(2, '0'); // Mes com dois dígitos
+            const dia = data.getDate().toString().padStart(2, '0'); // Dia com dois dígitos
+            const hora = data.getHours().toString().padStart(2, '0'); // Hora com dois dígitos
+            const minuto = data.getMinutes().toString().padStart(2, '0'); // Minuto com dois dígitos
+
+            // Formato: arquivo_YYYYMMDD_HHMM.txt
+            const nomeArquivo = `arquivo_${ano}${mes}${dia}_${hora}${minuto}.txt`;
+
+            // Criar o arquivo de texto
+            const blob = new Blob([textoCriptografado], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = nomeArquivo; // Nome do arquivo com data e hora
+            link.click();
+        }
+
+        // Importar: Ler o arquivo de texto, descriptografar e exibir no mesmo campo de texto
+        function mostrarInputArquivo() {
+            document.getElementById('fileInput').click(); // Abre o seletor de arquivo
+        }
+
+        // Função para ler o arquivo de texto importado
+        function lerArquivo(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const textoLido = e.target.result;
+                document.getElementById("inputText").value = textoLido;
+                importarTexto(); // Descriptografar automaticamente ao importar
+            };
+            reader.readAsText(file);
+        }
+
+        // Função para descriptografar o texto no campo
+        function importarTexto() {
+            const inputText = document.getElementById("inputText").value;
+            const textoImportado = decifraCesar(inputText, 3); // Deslocamento de 3 (exemplo)
+            document.getElementById("inputText").value = textoImportado;
+        }
+
+        // Função para adicionar o emoji ao texto
+        function adicionarEmoji(emoji) {
+            const textoArea = document.getElementById("inputText");
+            const cursorPos = textoArea.selectionStart; // Posição do cursor
+
+            // Adiciona o emoji no texto onde o cursor está
+            const textoAnterior = textoArea.value.substring(0, cursorPos);
+            const textoPosterior = textoArea.value.substring(cursorPos);
+            textoArea.value = textoAnterior + emoji + textoPosterior;
+
+            // Move o cursor após o emoji
+            textoArea.selectionStart = textoArea.selectionEnd = cursorPos + emoji.length;
+            textoArea.focus();
+        }
+
+        // Função para mostrar/ocultar o seletor de emojis
+        function toggleEmojiPicker() {
+            const picker = document.getElementById("emojiPicker");
+            picker.style.display = picker.style.display === "block" ? "none" : "block";
+        }
+    </script>
+</body>
+</html>
